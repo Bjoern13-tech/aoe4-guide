@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "Age of Empires Guide",
+  "region": "prod",
+  "environmentId": "6098dfcd-68e0-e8ce-ad15-e6772ae9670f",
+  "description": "",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {},
+  "databaseReferences": {}
+}

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "AoE4 Guide — Dev Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/GIT/AgeOfEmpiresCodeApp/my-app", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "AoE4 Guide — Preview (production build)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/GIT/AgeOfEmpiresCodeApp/my-app", "run", "preview"],
+      "port": 4173
+    }
+  ]
+}
