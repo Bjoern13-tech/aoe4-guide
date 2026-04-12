@@ -1,8 +1,6 @@
 # ⚔️ AoE4 Guide — Build Orders & Counter Matchups
 
-A comprehensive Age of Empires IV reference guide built with React, TypeScript, and Vite. Covers all 22 civilizations (including DLCs), build orders, counter matchups, hotkeys, map strategies, and an AI-style Game Advisor.
-
-![AoE4 Guide App Preview](preview.png)
+A comprehensive Age of Empires IV reference guide built as a **Power Apps Code App** with React, TypeScript, and Vite. Covers all 22 civilizations (including DLCs), build orders, counter matchups, hotkeys, map strategies, and an AI-style Game Advisor.
 
 ---
 
@@ -23,6 +21,7 @@ A comprehensive Age of Empires IV reference guide built with React, TypeScript, 
 |---|---|
 | Framework | React 19 + TypeScript |
 | Build Tool | Vite 7 |
+| Deployment | Power Apps Code App |
 | Styling | Pure CSS with CSS custom properties |
 | Fonts | Google Fonts — Cinzel (headings) + Inter (body) |
 | Routing | Page-level state (no router dependency) |
@@ -32,9 +31,15 @@ A comprehensive Age of Empires IV reference guide built with React, TypeScript, 
 
 ## Getting Started
 
+This app is built as a **Power Apps Code App**. To run it locally and deploy it, follow the official Microsoft guide:
+
+📖 [Create a Power Apps Code App from scratch](https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/create-an-app-from-scratch)
+
+### Local development
+
 ```bash
 # Clone the repository
-git clone https://github.com/bjoerrrrn/aoe4-guide.git
+git clone https://github.com/Bjoern13-tech/aoe4-guide.git
 cd aoe4-guide/my-app
 
 # Install dependencies
@@ -44,7 +49,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Then open the local URL shown in your terminal (e.g. `http://localhost:5173`).
 
 ```bash
 # Production build
