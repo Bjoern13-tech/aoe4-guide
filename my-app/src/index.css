@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  /* Palette */
+  --bg-deep:      #080604;
+  --bg-base:      #0d0a06;
+  --bg-surface:   #131009;
+  --bg-card:      #1a1610;
+  --bg-hover:     #231d14;
+  --bg-active:    #2a2418;
+
+  /* Borders */
+  --border:       #2e2518;
+  --border-mid:   #3f3220;
+  --border-bright:#5a4830;
+
+  /* Gold */
+  --gold:         #c9a84c;
+  --gold-light:   #e8c96a;
+  --gold-dim:     #8a6f30;
+  --gold-glow:    rgba(201,168,76,0.15);
+
+  /* Text */
+  --text-main:    #ede3cc;
+  --text-muted:   #8a7d62;
+  --text-faint:   #4a4030;
+
+  /* Semantic */
+  --green:  #6ab04c;
+  --red:    #e17055;
+  --blue:   #74b9ff;
+  --purple: #a29bfe;
+  --yellow: #fdcb6e;
+  --teal:   #00b894;
+
+  /* Radii */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+
+  /* Transitions */
+  --t-fast: 0.12s ease;
+  --t-mid:  0.2s ease;
+}
+
+html, body, #root {
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: block;
+  min-height: 100vh;
+
+  /* Subtle parchment texture via noise-like gradient */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.07) 0%, transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.012) 2px,
+      rgba(255,255,255,0.012) 4px
+    );
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Cinzel', Georgia, serif;
+  margin: 0;
+}
+p  { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button { cursor: pointer; font-family: inherit; }
+a { color: var(--gold); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+/* Utility */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }

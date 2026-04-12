@@ -1,0 +1,68 @@
+import type { HotkeyGroup } from './types';
+
+export const hotkeyGroups: HotkeyGroup[] = [
+  {
+    category: 'Economy',
+    icon: '🌾',
+    hotkeys: [
+      { action: 'Select all Town Centers', keys: ['H'], tip: 'Also moves camera to your TC. Press again to cycle through multiple TCs.' },
+      { action: 'Select idle villager', keys: ['.'], tip: 'Press repeatedly to cycle through ALL idle villagers. Never let them idle!' },
+      { action: 'Go to last event / alert', keys: ['Space'], tip: 'Jumps to whatever just happened — attack, death, building finished.' },
+      { action: 'Select all villagers on screen', keys: ['Double-click', 'Villager'], tip: 'Double-click any villager to select all visible villagers of that type.' },
+      { action: 'Queue villager × 5', keys: ['Shift', 'Q'], tip: 'Hold Shift when clicking any train button to queue 5 at once — great for TC batching.' },
+      { action: 'Set waypoint / queue move', keys: ['Shift', 'Right-click'], tip: 'Chain multiple move orders. Send villagers to wood THEN gold in one command.' },
+      { action: 'Delete selected unit/building', keys: ['Delete'], tip: 'Confirm the prompt. Useful to delete a misplaced eco building instantly.' },
+      { action: 'Open economic building menu', keys: ['B'], tip: 'Opens the radial menu for farms, mills, markets, etc. (default QWER scheme).' },
+      { action: 'Toggle game speed (SP only)', keys: ['F3'], tip: 'Speed up practice games to drill your build order repetitions faster.' },
+      { action: 'Display resources', keys: ['F4'], tip: 'Toggle the full resource breakdown HUD to track your income rates.' },
+    ],
+  },
+  {
+    category: 'Military',
+    icon: '⚔️',
+    hotkeys: [
+      { action: 'Attack move', keys: ['A'], tip: 'ALWAYS use attack-move when moving your army — units auto-engage enemies they see.' },
+      { action: 'Stop all actions', keys: ['S'], tip: 'Instantly halts your selected units. Use to hold position or cancel a bad move.' },
+      { action: 'Garrison into building', keys: ['G'], tip: 'Select units, press G, click a building to garrison. Essential for TC defense.' },
+      { action: 'Patrol', keys: ['Z'], tip: 'Units patrol back and forth and auto-attack enemies in range.' },
+      { action: 'Select all military on screen', keys: ['Ctrl', 'A'], tip: 'Quickly grab every combat unit visible. Good for reactive defense.' },
+      { action: 'Select all military on map', keys: ['Ctrl', 'Shift', 'A'], tip: 'Grabs EVERY military unit anywhere on the map. Use for rallying an army.' },
+      { action: 'Ungarrison all units', keys: ['G'], tip: 'Press G again with a building selected to eject all garrisoned units.' },
+      { action: 'Delete selected unit', keys: ['Delete'], tip: 'Useful when a unit is about to die and would give the enemy Bounty gold (Rus).' },
+      { action: 'Toggle formation', keys: ['F'], tip: 'Cycle through Loose, Box, and Line formations. Line = best ranged, Box = best melee.' },
+      { action: 'Activate unit special ability', keys: ['T'], tip: 'Triggers the active ability on selected units (e.g. Longbow Volley, Knight Charge).' },
+    ],
+  },
+  {
+    category: 'Camera',
+    icon: '📷',
+    hotkeys: [
+      { action: 'Create control group', keys: ['Ctrl', '1–9'], tip: 'Select units → Ctrl+1 to bind them. Press 1 to recall, double-press to jump to them.' },
+      { action: 'Select control group', keys: ['1–9'], tip: 'Instantly selects all units in that group from anywhere on the map.' },
+      { action: 'Jump to control group', keys: ['1–9', '1–9'], tip: 'Double-tap the number to both select AND center the camera on that group.' },
+      { action: 'Save camera bookmark', keys: ['Ctrl', 'F5–F8'], tip: 'Save your current view as a bookmark for lightning-fast camera recall.' },
+      { action: 'Jump to camera bookmark', keys: ['F5–F8'], tip: 'Instantly teleport your camera to a saved position. Use for TC, army, and expansions.' },
+      { action: 'Zoom in / out', keys: ['Scroll', 'Wheel'], tip: 'Zoom out for macro awareness, zoom in for precise unit micro.' },
+      { action: 'Rotate camera', keys: ['Middle-click', 'Drag'], tip: 'Rotate for better siege angles or spotting units behind terrain.' },
+      { action: 'Go to last notification', keys: ['Backspace'], tip: 'Quickly revisit the most recent alert if you missed it.' },
+      { action: 'Toggle minimap ping', keys: ['Alt', 'Click', 'Minimap'], tip: 'Ping the minimap to alert teammates in team games.' },
+      { action: 'Edge scroll (move camera)', keys: ['Move', 'Mouse', 'to Edge'], tip: 'Alternatively use WASD or arrow keys if you remap. Edge scroll is slowest.' },
+    ],
+  },
+  {
+    category: 'Production',
+    icon: '🏛️',
+    hotkeys: [
+      { action: 'Open military building menu', keys: ['V'], tip: 'Opens the radial for barracks, stables, ranges, etc. (default QWER scheme).' },
+      { action: 'Train / research (slot 1)', keys: ['Q'], tip: 'Trains the first unit or starts the first research in a selected building.' },
+      { action: 'Train / research (slot 2)', keys: ['W'], tip: 'Second slot. Learn which unit is on each slot for every building you use.' },
+      { action: 'Train / research (slot 3)', keys: ['E'], tip: 'Third slot.' },
+      { action: 'Train / research (slot 4)', keys: ['R'], tip: 'Fourth slot — usually an upgrade or advanced unit.' },
+      { action: 'Queue unit × 5', keys: ['Shift', 'Q/W/E/R'], tip: 'Hold Shift + press the unit key to queue 5 of that unit at once.' },
+      { action: 'Select same building type', keys: ['Double-click', 'Building'], tip: 'Double-click a Barracks to select ALL your barracks — train from all at once.' },
+      { action: 'Set rally point', keys: ['Right-click', 'Ground'], tip: 'Click the ground with a production building selected to set where units spawn.' },
+      { action: 'Rally to resource', keys: ['Right-click', 'Resource'], tip: 'Right-click a tree / mine with a TC selected to auto-task new villagers to it.' },
+      { action: 'Age up (confirm landmark)', keys: ['Landmark', '→', 'Q'], tip: 'Select the landmark building in the Age-up menu and press Q to confirm quickly.' },
+    ],
+  },
+];
