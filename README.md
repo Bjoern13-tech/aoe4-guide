@@ -1,15 +1,16 @@
 # ⚔️ AoE4 Guide — Build Orders & Counter Matchups
 
-A comprehensive Age of Empires IV reference guide built as a **Power Apps Code App** with React, TypeScript, and Vite. Covers all 22 civilizations (including DLCs), build orders, counter matchups, hotkeys, map strategies, and an AI-style Game Advisor.
+A comprehensive Age of Empires IV reference guide built as a **Power Apps Code App** with React, TypeScript, and Vite. Covers all 22 civilizations (including DLCs), live community build orders, counter matchups, hotkeys, map strategies, and a smart Game Advisor.
 
 ---
 
 ## Features
 
+- **Welcome Page** — Landing page with feature overview and quick navigation to every section
 - **22 Civilizations** — All base game civs + The Sultans Ascend, Knights of Cross & Rose, and Dynasties of the East DLCs, with variant badges and DLC grouping
-- **Build Orders** — Filterable by civilization and playstyle (Aggressive / Economic / Hybrid)
+- **Live Build Orders** — Fetched in real-time from the [aoe4guides.com public API](https://aoe4guides.com/api/api-docs/), sorted by community score, grouped by age (Dark / Feudal / Castle / Imperial), with resource counts per step
 - **Counter Matchups** — Head-to-head matchup data with favored/unfavored ratings and counter tips
-- **Game Advisor** — Pick your civ, enemy civ, and map → get a scored recommendation with the best build order, counter tips, and map-specific strategy
+- **Game Advisor** — Pick your civ, enemy civ, and map → get a scored strategy recommendation, then see the best-matching live community build with full step-by-step detail
 - **Hotkeys Reference** — All essential AoE4 hotkeys across Economy, Military, Camera, and Production categories
 - **Map Guide** — 10 maps with aggression level, sheep spawn info, key features, how-to-play, and best civilizations
 
@@ -25,7 +26,8 @@ A comprehensive Age of Empires IV reference guide built as a **Power Apps Code A
 | Styling | Pure CSS with CSS custom properties |
 | Fonts | Google Fonts — Cinzel (headings) + Inter (body) |
 | Routing | Page-level state (no router dependency) |
-| Data | Static TypeScript data files |
+| Live Data | [aoe4guides.com REST API](https://aoe4guides.com/api/api-docs/) |
+| Static Data | TypeScript data files (civs, matchups, maps, hotkeys) |
 
 ---
 
@@ -63,28 +65,46 @@ npm run build
 ```
 my-app/
 ├── src/
-│   ├── components/       # Page and UI components
-│   │   ├── CivGrid.tsx           # DLC-grouped civilization sidebar
-│   │   ├── CivDetail.tsx         # Civilization detail panel
-│   │   ├── BuildOrderView.tsx    # Build orders with playstyle filter
-│   │   ├── CounterMatchupView.tsx
-│   │   ├── GameAdvisorPage.tsx   # 3-step advisor UI
+│   ├── components/
+│   │   ├── WelcomePage.tsx         # Landing page with feature cards
+│   │   ├── CivGrid.tsx             # DLC-grouped civilization sidebar
+│   │   ├── CivDetail.tsx           # Civilization detail panel
+│   │   ├── BuildOrderView.tsx      # Live build orders from API
+│   │   ├── CounterMatchupView.tsx  # Matchup data display
+│   │   ├── GameAdvisorPage.tsx     # 3-step advisor with live builds
 │   │   ├── HotkeysPage.tsx
 │   │   └── MapGuidePage.tsx
-│   ├── data/             # All game data as TypeScript files
-│   │   ├── types.ts              # Shared interfaces
-│   │   ├── civs.ts               # 22 civilizations
-│   │   ├── buildOrders.ts        # Build order steps per civ
-│   │   ├── counterMatchups.ts    # Matchup data
-│   │   ├── hotkeys.ts            # Hotkey definitions
-│   │   └── maps.ts               # Map data
+│   ├── data/                       # Static game data
+│   │   ├── types.ts                # Shared TypeScript interfaces
+│   │   ├── civs.ts                 # 22 civilizations
+│   │   ├── buildOrders.ts          # Fallback build order data (used by advisor scoring)
+│   │   ├── counterMatchups.ts      # Matchup data
+│   │   ├── hotkeys.ts              # Hotkey definitions
+│   │   └── maps.ts                 # Map data
 │   ├── utils/
-│   │   └── advisorLogic.ts       # Game Advisor scoring algorithm
-│   ├── App.tsx           # Root component + page routing
-│   ├── App.css           # Component styles
-│   └── index.css         # Design system + global styles
-└── index.html            # OG meta tags + favicon
+│   │   ├── aoe4guidesApi.ts        # API client, types, HTML stripper, build ranker
+│   │   └── advisorLogic.ts         # Game Advisor scoring algorithm
+│   ├── App.tsx                     # Root component + page routing
+│   ├── App.css                     # Component styles
+│   └── index.css                   # Design system + global styles
+└── index.html                      # OG meta tags + favicon
 ```
+
+---
+
+## Live API Integration
+
+Build orders are fetched live from the [aoe4guides.com public API](https://aoe4guides.com/api/api-docs/) — no API key required, CORS open.
+
+```
+GET https://aoe4guides.com/api/builds?civ=ENG&orderBy=score
+```
+
+Each civ maps to a 3-letter code (`ENG`, `FRE`, `HRE`, `MON`, `CHI`, `ABB`, `DEL`, `RUS`, `OTT`, `MAL`, `BYZ`, `JAP`, `AYY`, `DRA`, `ZXL`, `JDA`, `HOL`, `KTE`, `GOH`, `MAC`, `SEN`, `TUG`). The app:
+
+1. Fetches the top 10 builds per civ on demand
+2. Strips HTML from step descriptions, converting image src paths to readable labels (e.g. `[House]`, `[Lumber Camp]`, `🌾`, `💰`)
+3. Groups steps by age section (Dark Age → Imperial Age)
 
 ---
 
@@ -100,17 +120,21 @@ my-app/
 
 ---
 
-## Game Advisor Algorithm
+## Game Advisor
 
-The advisor scores every build order for the selected civilization using:
+The advisor uses a two-step process:
 
-- **Base score** — 50 points
-- **Matchup favorability** — ±20 based on counter matchup data vs. the enemy civ
-- **Map compatibility** — ±15 based on map aggression level vs. build playstyle
-- **Civ identity alignment** — +10 if the build matches the civ's natural playstyle
-- **Difficulty penalty** — −3 (intermediate) or −8 (advanced)
+**Step 1 — Matchup scoring** (static data):
+- Base score 50
+- Matchup favorability vs. enemy civ: ±20
+- Map type vs. playstyle compatibility: ±15
+- Civ identity alignment: +10
+- Difficulty penalty: −3 / −8
 
-Returns the top-scored build plus up to 2 alternatives, with tailored counter tips and map advice.
+**Step 2 — Live build matching** (API):
+- Fetches live community builds for the selected civ
+- Ranks them by keyword matching against the recommended playstyle (Rush / Boom / Fast Castle / Defensive)
+- Displays the top match with full age-grouped steps, resource counts, author, season, and video link
 
 ---
 
