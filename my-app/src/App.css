@@ -18,9 +18,7 @@
 }
 
 .header-inner {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
   height: 58px;
   display: flex;
   align-items: center;
@@ -104,18 +102,14 @@
 .app-body {
   display: flex;
   flex: 1;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
 }
 
 /* ── Full-page layout (advisor / maps / hotkeys) ── */
 .full-page {
   flex: 1;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
-  padding: 2rem 1.75rem;
+  padding: 2rem 2.5rem;
   overflow-y: auto;
 }
 
@@ -143,8 +137,8 @@
    SIDEBAR
 ═══════════════════════════════════════════════════════ */
 .sidebar {
-  width: 250px;
-  min-width: 250px;
+  width: 280px;
+  min-width: 280px;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   padding: 1rem 0.65rem;
@@ -522,8 +516,8 @@
 
 /* Filter + selector column */
 .bo-filter-bar-wrapper {
-  width: 220px;
-  min-width: 220px;
+  width: 280px;
+  min-width: 280px;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -1305,7 +1299,7 @@
 
 .advisor-results-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 1.1rem;
 }
 
