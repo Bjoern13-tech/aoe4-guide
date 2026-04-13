@@ -178,7 +178,7 @@ export default function BuildOrderView({ civId, accentColor }: Props) {
                     return (
                       <li key={i} className="step-item">
                         <div className="step-left">
-                          {step.time && (
+                          {step.time && !step.time.includes('<') && (
                             <span className="step-time">{step.time}</span>
                           )}
                           {resources.length > 0 && (

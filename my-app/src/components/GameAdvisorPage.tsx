@@ -84,7 +84,7 @@ function LiveBuildDetail({ build, accentColor }: { build: ApiBuild; accentColor:
                 return (
                   <li key={i} className="step-item">
                     <div className="step-left">
-                      {step.time && <span className="step-time">{step.time}</span>}
+                      {step.time && !step.time.includes('<') && <span className="step-time">{step.time}</span>}
                       {res.length > 0 && <span className="step-resources">{res.join(' ')}</span>}
                     </div>
                     <span className="step-instruction">{desc}</span>
