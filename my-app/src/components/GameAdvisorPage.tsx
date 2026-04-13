@@ -1,85 +1,155 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { civilizations } from '../data/civs';
 import { buildOrders } from '../data/buildOrders';
 import { counterMatchups } from '../data/counterMatchups';
 import { maps } from '../data/maps';
 import { computeAdvisorResult } from '../utils/advisorLogic';
-import type { AdvisorResult, ScoredBuildOrder } from '../data/types';
+import { fetchBuildsForCiv, rankBuildsByPlaystyle, stripHtml, ageLabel } from '../utils/aoe4guidesApi';
+import type { AdvisorResult } from '../data/types';
+import type { ApiBuild, ApiStepSection } from '../utils/aoe4guidesApi';
 
-const difficultyColors: Record<string, string> = {
-  Beginner:     '#6ab04c',
-  Intermediate: '#fdcb6e',
-  Advanced:     '#e17055',
-};
-
-const playstyleColors: Record<string, string> = {
-  Rush:         '#e17055',
-  Boom:         '#6ab04c',
-  'Fast Castle':'#a29bfe',
-  Defensive:    '#74b9ff',
-  Hybrid:       '#fdcb6e',
-};
+// ── Small sub-components ─────────────────────────────────────────────────────
 
 function ScoreBar({ score, accentColor }: { score: number; accentColor: string }) {
   return (
     <div className="advisor-score-bar">
-      <div
-        className="advisor-score-fill"
-        style={{ width: `${score}%`, background: accentColor }}
-      />
+      <div className="advisor-score-fill" style={{ width: `${score}%`, background: accentColor }} />
       <span className="advisor-score-label">{score}/100</span>
     </div>
   );
 }
 
-function BuildCard({ sb, accentColor, featured }: { sb: ScoredBuildOrder; accentColor: string; featured?: boolean }) {
-  const bo = sb.buildOrder;
+function ResourceRow({ section }: { section: ApiStepSection }) {
+  const totals = section.steps.reduce(
+    (acc, s) => ({
+      food:  Math.max(acc.food,  parseInt(s.food)  || 0),
+      wood:  Math.max(acc.wood,  parseInt(s.wood)  || 0),
+      gold:  Math.max(acc.gold,  parseInt(s.gold)  || 0),
+      stone: Math.max(acc.stone, parseInt(s.stone) || 0),
+    }),
+    { food: 0, wood: 0, gold: 0, stone: 0 }
+  );
+  const any = totals.food || totals.wood || totals.gold || totals.stone;
+  if (!any) return null;
   return (
-    <div className={`advisor-build-card ${featured ? 'advisor-build-featured' : ''}`}
-      style={featured ? { borderColor: accentColor + '88' } : {}}>
-      <div className="advisor-build-top">
-        <div>
-          <p className="advisor-build-name" style={featured ? { color: accentColor } : {}}>{bo.name}</p>
-          <div className="bo-tab-meta" style={{ marginTop: '0.3rem' }}>
-            <span className="badge" style={{ color: difficultyColors[bo.difficulty], borderColor: difficultyColors[bo.difficulty] + '55' }}>
-              {bo.difficulty}
-            </span>
-            <span className="badge" style={{ color: playstyleColors[bo.playstyle], borderColor: playstyleColors[bo.playstyle] + '55' }}>
-              {bo.playstyle}
-            </span>
-          </div>
-        </div>
-        {featured && <span className="advisor-recommended-badge" style={{ background: accentColor + '22', color: accentColor }}>⭐ Recommended</span>}
-      </div>
-      <ScoreBar score={sb.score} accentColor={featured ? accentColor : '#4a3c24'} />
-      {sb.reasons.length > 0 && (
-        <ul className="advisor-reasons">
-          {sb.reasons.map((r, i) => (
-            <li key={i} className="advisor-reason-item">
-              <span style={{ color: sb.score >= 60 ? '#6ab04c' : sb.score <= 40 ? '#e17055' : '#fdcb6e' }}>▸</span> {r}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="resource-bar">
+      {totals.food  > 0 && <span className="res">🌾 {totals.food}</span>}
+      {totals.wood  > 0 && <span className="res">🪵 {totals.wood}</span>}
+      {totals.gold  > 0 && <span className="res">💰 {totals.gold}</span>}
+      {totals.stone > 0 && <span className="res">⛏ {totals.stone}</span>}
     </div>
   );
 }
+
+function LiveBuildDetail({ build, accentColor }: { build: ApiBuild; accentColor: string }) {
+  return (
+    <div className="advisor-live-build">
+      <div className="bo-header">
+        <h3 className="bo-title" style={{ color: accentColor }}>{build.title}</h3>
+        <div className="bo-meta-row">
+          <span className="bo-author">by {build.author}</span>
+          {build.season && (
+            <span className="badge" style={{ color: accentColor, borderColor: accentColor + '44' }}>
+              Season {build.season}
+            </span>
+          )}
+          {build.video && (
+            <a className="bo-video-link" href={build.video} target="_blank" rel="noopener noreferrer" style={{ color: accentColor }}>
+              ▶ Watch Video
+            </a>
+          )}
+        </div>
+        {build.description && <p className="bo-description">{build.description}</p>}
+      </div>
+
+      <div className="bo-steps">
+        {build.steps.map((section, si) => (
+          <div key={si} className="bo-age-section">
+            <div className="bo-age-header">
+              <span className="bo-age-label" style={{ color: accentColor }}>
+                {section.type === 'ageUp' ? '🏰' : '⏱'} {ageLabel(section)}
+              </span>
+              <ResourceRow section={section} />
+            </div>
+            <ol className="steps-list">
+              {section.steps.map((step, i) => {
+                const desc = stripHtml(step.description);
+                if (!desc) return null;
+                const res = [
+                  step.food  && parseInt(step.food)  ? `🌾${step.food}`  : '',
+                  step.wood  && parseInt(step.wood)  ? `🪵${step.wood}`  : '',
+                  step.gold  && parseInt(step.gold)  ? `💰${step.gold}`  : '',
+                  step.stone && parseInt(step.stone) ? `⛏${step.stone}` : '',
+                ].filter(Boolean);
+                return (
+                  <li key={i} className="step-item">
+                    <div className="step-left">
+                      {step.time && <span className="step-time">{step.time}</span>}
+                      {res.length > 0 && <span className="step-resources">{res.join(' ')}</span>}
+                    </div>
+                    <span className="step-instruction">{desc}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
 
 export default function GameAdvisorPage() {
   const [myCivId,    setMyCivId]    = useState<string | null>(null);
   const [enemyCivId, setEnemyCivId] = useState<string | null>(null);
   const [mapId,      setMapId]      = useState<string | null>(null);
 
+  // Live builds from API
+  const [liveBuilds,   setLiveBuilds]   = useState<ApiBuild[]>([]);
+  const [liveLoading,  setLiveLoading]  = useState(false);
+  const [selectedLiveId, setSelectedLiveId] = useState<string | null>(null);
+
+  // Fetch live builds whenever the selected civ changes
+  useEffect(() => {
+    if (!myCivId) { setLiveBuilds([]); return; }
+    let cancelled = false;
+    setLiveLoading(true);
+    setLiveBuilds([]);
+    setSelectedLiveId(null);
+    fetchBuildsForCiv(myCivId)
+      .then((data) => { if (!cancelled) { setLiveBuilds(data); } })
+      .catch(() => { /* silent — advisor still works without live builds */ })
+      .finally(() => { if (!cancelled) setLiveLoading(false); });
+    return () => { cancelled = true; };
+  }, [myCivId]);
+
+  // Static scoring result (matchup analysis, map tips, counter tips)
   const result = useMemo<(AdvisorResult & { _enemyCivName?: string }) | null>(() => {
     if (!myCivId || !enemyCivId || !mapId) return null;
     return computeAdvisorResult(myCivId, enemyCivId, mapId, buildOrders, counterMatchups, maps) as (AdvisorResult & { _enemyCivName?: string });
   }, [myCivId, enemyCivId, mapId]);
 
+  // Rank live builds by the recommended playstyle and pick the best match
+  const rankedBuilds = useMemo<ApiBuild[]>(() => {
+    if (!liveBuilds.length) return [];
+    const playstyle = result?.recommendedBuild?.buildOrder.playstyle ?? null;
+    if (!playstyle) return liveBuilds;
+    return rankBuildsByPlaystyle(liveBuilds, playstyle);
+  }, [liveBuilds, result]);
+
+  // Auto-select the best matched build whenever ranking changes
+  useEffect(() => {
+    if (rankedBuilds.length > 0) setSelectedLiveId(rankedBuilds[0].id);
+  }, [rankedBuilds]);
+
+  const selectedLiveBuild = rankedBuilds.find((b) => b.id === selectedLiveId) ?? rankedBuilds[0] ?? null;
+
   const myCiv    = civilizations.find((c) => c.id === myCivId);
   const enemyCiv = civilizations.find((c) => c.id === enemyCivId);
   const selMap   = maps.find((m) => m.id === mapId);
   const accentColor = myCiv?.accentColor ?? '#c9a84c';
-
   const ready = myCivId && enemyCivId && mapId && myCivId !== enemyCivId;
 
   return (
@@ -87,7 +157,7 @@ export default function GameAdvisorPage() {
       <div className="page-header">
         <h2 className="page-title">Game Advisor</h2>
         <p className="page-subtitle">
-          Choose your civilization, your opponent, and the map — get a tailored build order and strategy.
+          Choose your civilization, your opponent, and the map — get the right build order and strategy.
         </p>
       </div>
 
@@ -101,8 +171,7 @@ export default function GameAdvisorPage() {
           </div>
           <div className="advisor-civ-picker">
             {civilizations.map((c) => (
-              <button
-                key={c.id}
+              <button key={c.id}
                 className={`advisor-civ-btn ${myCivId === c.id ? 'advisor-civ-selected' : ''}`}
                 onClick={() => setMyCivId(c.id)}
                 style={myCivId === c.id ? { borderColor: c.accentColor, color: c.accentColor, background: c.color + '44' } : {}}
@@ -123,20 +192,17 @@ export default function GameAdvisorPage() {
             {enemyCiv && <span className="advisor-step-chosen" style={{ color: enemyCiv.accentColor }}>{enemyCiv.flag} {enemyCiv.name}</span>}
           </div>
           <div className="advisor-civ-picker">
-            {civilizations
-              .filter((c) => c.id !== myCivId)
-              .map((c) => (
-                <button
-                  key={c.id}
-                  className={`advisor-civ-btn ${enemyCivId === c.id ? 'advisor-civ-selected' : ''}`}
-                  onClick={() => setEnemyCivId(c.id)}
-                  style={enemyCivId === c.id ? { borderColor: c.accentColor, color: c.accentColor, background: c.color + '44' } : {}}
-                  title={c.name}
-                >
-                  <span className="advisor-civ-flag">{c.flag}</span>
-                  <span className="advisor-civ-name">{c.name}</span>
-                </button>
-              ))}
+            {civilizations.filter((c) => c.id !== myCivId).map((c) => (
+              <button key={c.id}
+                className={`advisor-civ-btn ${enemyCivId === c.id ? 'advisor-civ-selected' : ''}`}
+                onClick={() => setEnemyCivId(c.id)}
+                style={enemyCivId === c.id ? { borderColor: c.accentColor, color: c.accentColor, background: c.color + '44' } : {}}
+                title={c.name}
+              >
+                <span className="advisor-civ-flag">{c.flag}</span>
+                <span className="advisor-civ-name">{c.name}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -149,8 +215,7 @@ export default function GameAdvisorPage() {
           </div>
           <div className="advisor-map-picker">
             {maps.map((m) => (
-              <button
-                key={m.id}
+              <button key={m.id}
                 className={`advisor-map-btn ${mapId === m.id ? 'advisor-map-selected' : ''}`}
                 onClick={() => setMapId(m.id)}
                 style={mapId === m.id ? { borderColor: '#74b9ff', color: '#74b9ff' } : {}}
@@ -163,7 +228,7 @@ export default function GameAdvisorPage() {
         </div>
       </div>
 
-      {/* Results */}
+      {/* Empty state */}
       {!ready && (
         <div className="advisor-empty">
           <div className="advisor-empty-icon">🎯</div>
@@ -171,41 +236,77 @@ export default function GameAdvisorPage() {
         </div>
       )}
 
-      {ready && !result && (
-        <div className="advisor-empty">
-          <div className="advisor-empty-icon">📭</div>
-          <p>No build orders available for <strong>{myCiv?.name}</strong> yet. More coming soon!</p>
-        </div>
-      )}
-
+      {/* Results */}
       {ready && result && (
         <div className="advisor-results">
+
           {/* Overall strategy */}
           <div className="advisor-strategy" style={{ borderColor: accentColor + '44' }}>
             <h4 className="section-label" style={{ color: accentColor }}>📋 Overall Strategy</h4>
             <p className="advisor-strategy-text">{result.overallStrategy}</p>
+            {result.recommendedBuild && (
+              <div className="advisor-playstyle-row">
+                <span className="advisor-why-label">Recommended playstyle:</span>
+                <span className="badge" style={{ color: accentColor, borderColor: accentColor + '55' }}>
+                  {result.recommendedBuild.buildOrder.playstyle}
+                </span>
+                <ScoreBar score={result.recommendedBuild.score} accentColor={accentColor} />
+              </div>
+            )}
+            {(result.recommendedBuild?.reasons ?? []).length > 0 && (
+              <ul className="advisor-reasons" style={{ marginTop: '0.5rem' }}>
+                {result.recommendedBuild!.reasons.map((r, i) => (
+                  <li key={i} className="advisor-reason-item">
+                    <span style={{ color: (result.recommendedBuild?.score ?? 0) >= 60 ? '#6ab04c' : '#fdcb6e' }}>▸</span> {r}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="advisor-results-grid">
-            {/* Left: build orders */}
+            {/* Left: live build order */}
             <div className="advisor-builds-col">
-              <h4 className="section-label">⚔️ Recommended Build Orders</h4>
+              <h4 className="section-label">
+                📜 Recommended Build Order
+                {liveLoading && <span className="advisor-live-spinner" />}
+              </h4>
 
-              {result.recommendedBuild && (
-                <BuildCard sb={result.recommendedBuild} accentColor={accentColor} featured />
+              {!liveLoading && rankedBuilds.length > 0 && (
+                <>
+                  {/* Build selector — compact tabs */}
+                  {rankedBuilds.length > 1 && (
+                    <div className="advisor-build-tabs">
+                      {rankedBuilds.slice(0, 5).map((b, i) => (
+                        <button
+                          key={b.id}
+                          className={`advisor-build-tab ${selectedLiveId === b.id ? 'advisor-build-tab-active' : ''}`}
+                          onClick={() => setSelectedLiveId(b.id)}
+                          style={selectedLiveId === b.id ? { borderColor: accentColor, color: accentColor } : {}}
+                        >
+                          {i === 0 && <span className="advisor-recommended-badge" style={{ background: accentColor + '22', color: accentColor }}>⭐</span>}
+                          <span className="advisor-build-tab-name">{b.title}</span>
+                          <span className="advisor-build-tab-meta">by {b.author}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Full build detail */}
+                  {selectedLiveBuild && (
+                    <LiveBuildDetail build={selectedLiveBuild} accentColor={accentColor} />
+                  )}
+                </>
               )}
 
-              {result.alternativeBuilds.length > 0 && (
-                <>
-                  <p className="advisor-alt-label">Alternative Options</p>
-                  {result.alternativeBuilds.map((sb) => (
-                    <BuildCard key={sb.buildOrder.id} sb={sb} accentColor={accentColor} />
-                  ))}
-                </>
+              {!liveLoading && rankedBuilds.length === 0 && (
+                <div className="empty-state">
+                  <p>No community builds found for this civilization.</p>
+                </div>
               )}
             </div>
 
-            {/* Right: tips */}
+            {/* Right: counter tips + map tips */}
             <div className="advisor-tips-col">
               {result.counterTips.length > 0 && (
                 <div className="advisor-tips-section">
@@ -236,6 +337,13 @@ export default function GameAdvisorPage() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {ready && !result && (
+        <div className="advisor-empty">
+          <div className="advisor-empty-icon">📭</div>
+          <p>No matchup data available for <strong>{myCiv?.name}</strong> yet.</p>
         </div>
       )}
     </div>

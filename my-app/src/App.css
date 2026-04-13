@@ -1229,6 +1229,80 @@
 }
 .advisor-strategy-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; }
 
+.advisor-playstyle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+.advisor-why-label { font-size: 0.75rem; color: var(--text-faint); }
+
+/* Live build spinner (inline next to section heading) */
+@keyframes spin-inline {
+  to { transform: rotate(360deg); }
+}
+.advisor-live-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-mid);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin-inline 0.7s linear infinite;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Build selector tabs (compact, horizontal scroll) */
+.advisor-build-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.advisor-build-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast), border-color var(--t-fast);
+  width: 100%;
+}
+.advisor-build-tab:hover { background: var(--bg-hover); border-color: var(--border-mid); }
+.advisor-build-tab-active { background: var(--bg-hover); }
+
+.advisor-build-tab-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.advisor-build-tab-meta {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* Live build detail block inside advisor */
+.advisor-live-build {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .advisor-results-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

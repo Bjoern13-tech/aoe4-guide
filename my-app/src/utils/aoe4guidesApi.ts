@@ -86,3 +86,32 @@ export async function fetchBuildsForCiv(civId: string): Promise<ApiBuild[]> {
   if (!res.ok) throw new Error(`Failed to fetch builds (${res.status})`);
   return res.json() as Promise<ApiBuild[]>;
 }
+
+// Keywords per playstyle used to match live build titles/descriptions
+const PLAYSTYLE_KEYWORDS: Record<string, string[]> = {
+  Rush:          ['rush', '2tc', '2 tc', 'aggress', 'early attack', 'feudal attack', 'early pressure', 'fast feudal', 'scout rush', 'man-at-arms'],
+  Boom:          ['boom', 'eco', 'economic', '3tc', '3 tc', 'fast imp', 'imperial', 'late game', 'greedy', 'turtle'],
+  'Fast Castle': ['fast castle', 'fc ', ' fc', 'castle rush', 'castle age', 'landmark rush'],
+  Defensive:     ['defensive', 'turtle', 'wall', 'fortif', 'tower rush'],
+  Hybrid:        ['hybrid', 'flexible', 'standard', 'opener'],
+};
+
+/**
+ * Score live API builds by how well their title/description matches a playstyle.
+ * Returns the builds sorted: best match first.
+ */
+export function rankBuildsByPlaystyle(builds: ApiBuild[], playstyle: string): ApiBuild[] {
+  const keywords = PLAYSTYLE_KEYWORDS[playstyle] ?? [];
+
+  const scored = builds.map((b) => {
+    const text = (b.title + ' ' + (b.description ?? '')).toLowerCase();
+    let score = 0;
+    for (const kw of keywords) {
+      if (text.includes(kw)) score += 10;
+    }
+    return { build: b, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map((s) => s.build);
+}
