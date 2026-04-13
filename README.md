@@ -2,6 +2,8 @@
 
 A comprehensive Age of Empires IV reference guide built as a **Power Apps Code App** with React, TypeScript, and Vite. Covers all 22 civilizations (including DLCs), live community build orders, counter matchups, hotkeys, map strategies, and a smart Game Advisor.
 
+![AoE4 Guide Preview](preview.png)
+
 ---
 
 ## Features
