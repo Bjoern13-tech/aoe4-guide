@@ -8,9 +8,10 @@ import CounterMatchupView from './components/CounterMatchupView';
 import HotkeysPage from './components/HotkeysPage';
 import MapGuidePage from './components/MapGuidePage';
 import GameAdvisorPage from './components/GameAdvisorPage';
+import WelcomePage from './components/WelcomePage';
 import './App.css';
 
-type Page = 'civilizations' | 'advisor' | 'maps' | 'hotkeys';
+type Page = 'welcome' | 'civilizations' | 'advisor' | 'maps' | 'hotkeys';
 type CivTab = 'build-orders' | 'counter-matchups';
 
 const navItems: { id: Page; label: string; icon: string }[] = [
@@ -21,7 +22,7 @@ const navItems: { id: Page; label: string; icon: string }[] = [
 ];
 
 export default function App() {
-  const [activePage,    setActivePage]    = useState<Page>('civilizations');
+  const [activePage,    setActivePage]    = useState<Page>('welcome');
   const [selectedCivId, setSelectedCivId] = useState<string | null>(null);
   const [activeTab,     setActiveTab]     = useState<CivTab>('build-orders');
 
@@ -34,20 +35,20 @@ export default function App() {
       {/* ── Header ── */}
       <header className="app-header">
         <div className="header-inner">
-          <div className="header-title-group">
+          <button className="header-title-group" onClick={() => setActivePage('welcome')}>
             <span className="header-emblem">⚔️</span>
             <div>
               <h1 className="header-title">AoE4 Guide</h1>
               <p className="header-subtitle">Build Orders &amp; Counter Matchups</p>
             </div>
-          </div>
+          </button>
 
           {/* Top nav */}
           <nav className="nav-menu">
             {navItems.map((item) => (
               <button
                 key={item.id}
-                className={`nav-btn ${activePage === item.id ? 'nav-btn-active' : ''}`}
+                className={`nav-btn ${activePage !== 'welcome' && activePage === item.id ? 'nav-btn-active' : ''}`}
                 onClick={() => setActivePage(item.id)}
               >
                 <span className="nav-btn-icon">{item.icon}</span>
@@ -57,6 +58,13 @@ export default function App() {
           </nav>
         </div>
       </header>
+
+      {/* ── Page: Welcome ── */}
+      {activePage === 'welcome' && (
+        <main className="full-page">
+          <WelcomePage onNavigate={setActivePage} />
+        </main>
+      )}
 
       {/* ── Page: Civilizations ── */}
       {activePage === 'civilizations' && (
