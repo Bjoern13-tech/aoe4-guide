@@ -21,7 +21,7 @@ export const civilizations: Civilization[] = [
     weaknesses: ['Expensive units', 'Relies on map control', 'Weak vs spearmen spam'],
     color: '#003189',
     accentColor: '#f4c430',
-    flag: '🇫🇷',
+    flag: '👑',
   },
   {
     id: 'hre',

@@ -68,13 +68,68 @@ export function ageLabel(section: ApiStepSection): string {
   return AGE_LABELS[section.age] ?? `Age ${section.age}`;
 }
 
-/** Strip HTML tags from API description strings, preserving title/alt text from img tags */
+// Resource icons shown inline in descriptions
+const RESOURCE_ICONS: Record<string, string> = {
+  resource_food:          '🌾',
+  resource_gold:          '💰',
+  resource_wood:          '🪵',
+  resource_stone:         '⛏',
+  deer:                   '🦌',
+  sheep:                  '🐑',
+  berrybush:              '🫐',
+  gaiatreeprototypetree:  '🌲',
+};
+
+// Icons to skip entirely (decorative / already shown in section header)
+const SKIP_ICONS = new Set(['rally', 'age_1', 'age_2', 'age_3', 'age_4']);
+
+// Unit name overrides (strip trailing numeric tier suffix, then title-case)
+const UNIT_OVERRIDES: Record<string, string> = {
+  'man-at-arms':  'MAA',
+  'town-center':  'TC',
+};
+
+function srcToLabel(src: string): string {
+  // Extract just the filename without extension and path
+  const filename = src.split('/').pop()?.replace(/\.\w+$/, '') ?? '';
+
+  // Skip decorative icons and civ flags
+  if (SKIP_ICONS.has(filename)) return '';
+  if (src.includes('/civilization_flag/')) return '';
+
+  // Resource → emoji
+  if (filename in RESOURCE_ICONS) return RESOURCE_ICONS[filename];
+
+  // Strip trailing tier number: spearman-1 → spearman, knight-2 → knight
+  const base = filename.replace(/-\d+$/, '');
+
+  // Known abbreviations
+  if (base in UNIT_OVERRIDES) return `[${UNIT_OVERRIDES[base]}]`;
+
+  // Convert kebab-case → Title Case
+  const label = base
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+
+  return `[${label}]`;
+}
+
+/** Strip HTML from API description strings, converting img src paths to readable labels */
 export function stripHtml(html: string): string {
   return html
-    .replace(/<img[^>]*title="([^"]*)"[^>]*\/?>/gi, ' [$1] ')
-    .replace(/<img[^>]*alt="([^"]*)"[^>]*\/?>/gi, ' [$1] ')
-    .replace(/<img[^>]*\/?>/gi, '')
+    // title attribute takes priority (e.g. title="Rally")
+    .replace(/<img[^>]*title="([^"]*)"[^>]*\/?>/gi, (_, title) =>
+      title ? `[${title}]` : ''
+    )
+    // Extract label from src path for remaining img tags
+    .replace(/<img[^>]*src="([^"]*)"[^>]*\/?>/gi, (_, src) => {
+      const label = srcToLabel(src);
+      return label ? ` ${label} ` : ' ';
+    })
+    // Strip any remaining HTML tags
     .replace(/<[^>]+>/g, '')
+    // Collapse multiple spaces
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
