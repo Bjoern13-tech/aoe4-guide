@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { civilizations } from './data/civs';
-import { buildOrders } from './data/buildOrders';
 import { counterMatchups } from './data/counterMatchups';
 import CivGrid from './components/CivGrid';
 import CivDetail from './components/CivDetail';
@@ -26,9 +25,8 @@ export default function App() {
   const [selectedCivId, setSelectedCivId] = useState<string | null>(null);
   const [activeTab,     setActiveTab]     = useState<CivTab>('build-orders');
 
-  const selectedCiv      = civilizations.find((c) => c.id === selectedCivId) ?? null;
-  const civBuildOrders   = buildOrders.filter((b) => b.civId === selectedCivId);
-  const civMatchup       = counterMatchups.find((m) => m.civId === selectedCivId);
+  const selectedCiv  = civilizations.find((c) => c.id === selectedCivId) ?? null;
+  const civMatchup   = counterMatchups.find((m) => m.civId === selectedCivId);
   const accentColor      = selectedCiv?.accentColor ?? '#c9a84c';
 
   return (
@@ -112,11 +110,7 @@ export default function App() {
                     style={activeTab === 'build-orders' ? { borderBottomColor: accentColor, color: accentColor } : {}}
                   >
                     📜 Build Orders
-                    {civBuildOrders.length > 0 && (
-                      <span className="tab-count" style={{ background: accentColor + '33', color: accentColor }}>
-                        {civBuildOrders.length}
-                      </span>
-                    )}
+                    <span className="tab-count" style={{ background: accentColor + '33', color: accentColor }}>Live</span>
                   </button>
                   <button
                     className={`tab-btn ${activeTab === 'counter-matchups' ? 'tab-btn-active' : ''}`}
@@ -134,7 +128,7 @@ export default function App() {
 
                 <div className="tab-content">
                   {activeTab === 'build-orders' ? (
-                    <BuildOrderView buildOrders={civBuildOrders} accentColor={accentColor} />
+                    <BuildOrderView civId={selectedCivId!} accentColor={accentColor} />
                   ) : (
                     <CounterMatchupView matchup={civMatchup} accentColor={accentColor} />
                   )}

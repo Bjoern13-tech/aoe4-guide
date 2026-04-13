@@ -1,162 +1,197 @@
-import { useState } from 'react';
-import type { BuildOrder, StepType } from '../data/types';
+import { useState, useEffect } from 'react';
+import { fetchBuildsForCiv, stripHtml, ageLabel } from '../utils/aoe4guidesApi';
+import type { ApiBuild, ApiStepSection } from '../utils/aoe4guidesApi';
 
 interface Props {
-  buildOrders: BuildOrder[];
+  civId: string;
   accentColor: string;
 }
 
-type PlaystyleFilter = 'All' | 'Aggressive' | 'Economic';
-
-const stepIcons: Record<StepType, string> = {
-  eco: '🌾',
-  military: '⚔️',
-  'age-up': '🏰',
-  landmark: '🏛️',
-  note: '📌',
-};
-
-const stepColors: Record<StepType, string> = {
-  eco: '#6ab04c',
-  military: '#e17055',
-  'age-up': '#fdcb6e',
-  landmark: '#a29bfe',
-  note: '#74b9ff',
-};
-
-const difficultyColors: Record<string, string> = {
-  Beginner:     '#6ab04c',
-  Intermediate: '#fdcb6e',
-  Advanced:     '#e17055',
-};
-
-const playstyleColors: Record<string, string> = {
-  Rush:         '#e17055',
-  Boom:         '#6ab04c',
-  'Fast Castle':'#a29bfe',
-  Defensive:    '#74b9ff',
-  Hybrid:       '#fdcb6e',
-};
-
-const filterDefs: { id: PlaystyleFilter; label: string; icon: string; styles: string[] }[] = [
-  { id: 'All',        label: 'All',        icon: '📋', styles: ['Rush', 'Boom', 'Fast Castle', 'Defensive', 'Hybrid'] },
-  { id: 'Aggressive', label: 'Aggressive', icon: '⚔️', styles: ['Rush'] },
-  { id: 'Economic',   label: 'Economic',   icon: '💰', styles: ['Boom', 'Fast Castle'] },
-];
-
-export default function BuildOrderView({ buildOrders, accentColor }: Props) {
-  const [filter, setFilter] = useState<PlaystyleFilter>('All');
-  const [selectedId, setSelectedId] = useState<string | null>(
-    buildOrders.length > 0 ? buildOrders[0].id : null
+function ResourceBar({ section }: { section: ApiStepSection }) {
+  // Collect all unique non-zero resource totals across steps for display
+  const totals = section.steps.reduce(
+    (acc, s) => ({
+      food:  Math.max(acc.food,  parseInt(s.food)  || 0),
+      wood:  Math.max(acc.wood,  parseInt(s.wood)  || 0),
+      gold:  Math.max(acc.gold,  parseInt(s.gold)  || 0),
+      stone: Math.max(acc.stone, parseInt(s.stone) || 0),
+    }),
+    { food: 0, wood: 0, gold: 0, stone: 0 }
   );
+  const any = totals.food || totals.wood || totals.gold || totals.stone;
+  if (!any) return null;
+  return (
+    <div className="resource-bar">
+      {totals.food  > 0 && <span className="res res-food">🌾 {totals.food}</span>}
+      {totals.wood  > 0 && <span className="res res-wood">🪵 {totals.wood}</span>}
+      {totals.gold  > 0 && <span className="res res-gold">💰 {totals.gold}</span>}
+      {totals.stone > 0 && <span className="res res-stone">⛏ {totals.stone}</span>}
+    </div>
+  );
+}
 
-  if (buildOrders.length === 0) {
+export default function BuildOrderView({ civId, accentColor }: Props) {
+  const [builds, setBuilds]     = useState<ApiBuild[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setBuilds([]);
+    setSelectedId(null);
+
+    fetchBuildsForCiv(civId)
+      .then((data) => {
+        if (cancelled) return;
+        setBuilds(data);
+        setSelectedId(data[0]?.id ?? null);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [civId]);
+
+  if (loading) {
     return (
-      <div className="empty-state">
-        <p>No build orders available for this civilization yet.</p>
-        <p className="empty-hint">Check back soon — more are coming!</p>
+      <div className="bo-loading">
+        <div className="bo-spinner" />
+        <p>Loading community builds…</p>
       </div>
     );
   }
 
-  const activeDef   = filterDefs.find((f) => f.id === filter)!;
-  const filtered    = buildOrders.filter((b) => activeDef.styles.includes(b.playstyle));
-  const displayList = filtered.length > 0 ? filtered : buildOrders; // fallback
+  if (error) {
+    return (
+      <div className="empty-state">
+        <p>Could not load builds: {error}</p>
+        <p className="empty-hint">Check your connection or try again later.</p>
+      </div>
+    );
+  }
 
-  // If selected build is not in current filter, auto-select first visible
-  const effectiveId = displayList.find((b) => b.id === selectedId)
-    ? selectedId
-    : displayList[0]?.id ?? null;
+  if (builds.length === 0) {
+    return (
+      <div className="empty-state">
+        <p>No community builds found for this civilization yet.</p>
+        <p className="empty-hint">Check back soon — the community is always adding more!</p>
+      </div>
+    );
+  }
 
-  const selected = buildOrders.find((b) => b.id === effectiveId) ?? null;
+  const selected = builds.find((b) => b.id === selectedId) ?? builds[0];
 
   return (
     <div className="build-order-layout">
-      {/* Playstyle filter bar */}
+      {/* Build selector */}
       <div className="bo-filter-bar-wrapper">
-        <div className="bo-filter-bar">
-          {filterDefs.map((f) => (
-            <button
-              key={f.id}
-              className={`bo-filter-btn ${filter === f.id ? 'bo-filter-active' : ''}`}
-              onClick={() => setFilter(f.id)}
-              style={filter === f.id ? { borderColor: accentColor, color: accentColor, background: accentColor + '18' } : {}}
-            >
-              {f.icon} {f.label}
-              {f.id !== 'All' && (
-                <span className="bo-filter-count">
-                  {buildOrders.filter((b) => f.styles.includes(b.playstyle)).length}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="bo-source-badge">
+          📡 Live community builds from{' '}
+          <a href="https://aoe4guides.com" target="_blank" rel="noopener noreferrer">
+            aoe4guides.com
+          </a>
+          , sorted by score
         </div>
 
-        {/* Build order selector */}
         <div className="bo-selector">
-          {displayList.map((bo) => (
+          {builds.map((bo) => (
             <button
               key={bo.id}
-              className={`bo-tab ${effectiveId === bo.id ? 'bo-tab-active' : ''}`}
+              className={`bo-tab ${selectedId === bo.id ? 'bo-tab-active' : ''}`}
               onClick={() => setSelectedId(bo.id)}
-              style={effectiveId === bo.id ? { borderColor: accentColor, color: accentColor } : {}}
+              style={selectedId === bo.id ? { borderColor: accentColor, color: accentColor } : {}}
             >
-              <span className="bo-tab-name">{bo.name}</span>
+              <span className="bo-tab-name">{bo.title}</span>
               <div className="bo-tab-meta">
-                <span className="badge" style={{ color: difficultyColors[bo.difficulty], borderColor: difficultyColors[bo.difficulty] + '55' }}>
-                  {bo.difficulty}
+                <span className="badge" style={{ color: '#8a7d62', borderColor: '#3f322055' }}>
+                  by {bo.author}
                 </span>
-                <span className="badge" style={{ color: playstyleColors[bo.playstyle], borderColor: playstyleColors[bo.playstyle] + '55' }}>
-                  {bo.playstyle}
-                </span>
+                {bo.season && (
+                  <span className="badge" style={{ color: accentColor, borderColor: accentColor + '44' }}>
+                    S{bo.season}
+                  </span>
+                )}
               </div>
             </button>
           ))}
-          {displayList.length === 0 && (
-            <p className="bo-empty-filter">No {filter.toLowerCase()} builds yet for this civ.</p>
-          )}
         </div>
       </div>
 
-      {/* Build order content */}
+      {/* Build detail */}
       {selected && (
         <div className="bo-content">
           <div className="bo-header">
-            <h3 className="bo-title" style={{ color: accentColor }}>{selected.name}</h3>
-            <p className="bo-description">{selected.description}</p>
+            <h3 className="bo-title" style={{ color: accentColor }}>{selected.title}</h3>
+            <div className="bo-meta-row">
+              <span className="bo-author">by {selected.author}</span>
+              {selected.season && (
+                <span className="badge" style={{ color: accentColor, borderColor: accentColor + '44' }}>
+                  Season {selected.season}
+                </span>
+              )}
+              {selected.video && (
+                <a
+                  className="bo-video-link"
+                  href={selected.video}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: accentColor }}
+                >
+                  ▶ Watch Video
+                </a>
+              )}
+            </div>
+            {selected.description && (
+              <p className="bo-description">{selected.description}</p>
+            )}
           </div>
 
+          {/* Age sections */}
           <div className="bo-steps">
-            <h4 className="section-label">Build Steps</h4>
-            <ol className="steps-list">
-              {selected.steps.map((step, i) => (
-                <li key={i} className="step-item">
-                  <div className="step-left">
-                    <span className="step-icon" title={step.type} style={{ color: stepColors[step.type] }}>
-                      {stepIcons[step.type]}
-                    </span>
-                    {step.pop !== undefined && (
-                      <span className="step-pop" style={{ borderColor: accentColor + '55', color: accentColor }}>
-                        {step.pop} pop
-                      </span>
-                    )}
-                  </div>
-                  <span className="step-instruction">{step.instruction}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+            {selected.steps.map((section, si) => (
+              <div key={si} className="bo-age-section">
+                <div className="bo-age-header">
+                  <span className="bo-age-label" style={{ color: accentColor }}>
+                    {section.type === 'ageUp' ? '🏰' : '⏱'} {ageLabel(section)}
+                  </span>
+                  <ResourceBar section={section} />
+                </div>
 
-          <div className="bo-tips">
-            <h4 className="section-label">Pro Tips</h4>
-            <ul className="tips-list">
-              {selected.tips.map((tip, i) => (
-                <li key={i} className="tip-item">
-                  <span className="tip-bullet" style={{ color: accentColor }}>▶</span>
-                  {tip}
-                </li>
-              ))}
-            </ul>
+                <ol className="steps-list">
+                  {section.steps.map((step, i) => {
+                    const desc = stripHtml(step.description);
+                    if (!desc) return null;
+                    const resources = [
+                      step.food  && parseInt(step.food)  ? `🌾${step.food}`  : '',
+                      step.wood  && parseInt(step.wood)  ? `🪵${step.wood}`  : '',
+                      step.gold  && parseInt(step.gold)  ? `💰${step.gold}`  : '',
+                      step.stone && parseInt(step.stone) ? `⛏${step.stone}` : '',
+                    ].filter(Boolean);
+
+                    return (
+                      <li key={i} className="step-item">
+                        <div className="step-left">
+                          {step.time && (
+                            <span className="step-time">{step.time}</span>
+                          )}
+                          {resources.length > 0 && (
+                            <span className="step-resources">{resources.join(' ')}</span>
+                          )}
+                        </div>
+                        <span className="step-instruction">{desc}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            ))}
           </div>
         </div>
       )}
